@@ -1,0 +1,250 @@
+EMPLOYEE(SSN, Name, Address, Sex, Salary, SuperSSN, DNo)
+            DEPARTMENT(DNo, DName, MgrSSN, MgrStartDate)
+            DLOCATION(DNo,DLoc)
+            PROJECT(PNo, PName, PLocation, DNo)
+            WORKS_ON(SSN, PNo, Hours)
+
+CREATE TABLE EMPLOYEE(SSN VARCHAR(8),
+Name VARCHAR(10),
+Address VARCHAR(30),
+Sex CHAR(2),
+Salary NUMBER(10),SuperSSN VARCHAR(8),DNo VARCHAR(6),
+CONSTRAINT PK_SSN PRIMARY KEY(SSN));
+
+
+CREATE TABLE DEPARTMENT(DNo VARCHAR(6),
+DName VARCHAR(10),
+MgrSSN VARCHAR(8),
+MgrStartDate DATE,
+CONSTRAINT PK_DNo PRIMARY KEY(DNo),
+CONSTRAINT FK_MgrSSN FOREIGN KEY(MgrSSN) REFERENCES EMPLOYEE(SSN)); 
+
+
+CREATE TABLE DLOCATION(DNo VARCHAR(6),
+DLoc VARCHAR(15),
+CONSTRAINT PK_DNo_DLoc PRIMARY KEY(DNo,DLoc),
+CONSTRAINT FK_DNo FOREIGN KEY(DNo) REFERENCES DEPARTMENT(DNo));
+
+CREATE TABLE PROJECT(PNo VARCHAR(5),
+ PName VARCHAR(10), 
+PLocation VARCHAR(14), 
+DNo VARCHAr(6),
+CONSTRAINT PK_PNo PRIMARY KEY(PNo),
+CONSTRAINT FK_PDNo FOREIGN KEY(DNo) REFERENCES DEPARTMENT(DNo));
+
+CREATE TABLE WORKS_ON(SSN VARCHAR(8),
+ PNo VARCHAR(5), 
+Hours NUMBER(5),
+CONSTRAINT PK_PNo_SSN  PRIMARY KEY(PNo,SSN),
+CONSTRAINT FK_WSSN FOREIGN KEY(SSN) REFERENCES EMPLOYEE(SSN),
+CONSTRAINT FK_PNo FOREIGN KEY(PNo) REFERENCES PROJECT(PNo));
+
+ALTER TABLE EMPLOYEE ADD CONSTRAINT FK_SSN FOREIGN KEY(SuperSSN) REFERENCES EMPLOYEE(SSN);
+
+ALTER TABLE EMPLOYEE ADD CONSTRAINT FK_EDNo FOREIGN KEY(DNo) REFERENCES DEPARTMENT(DNo);
+
+INSERT INTO EMPLOYEE(SSN, Name, Address, Sex, Salary)VALUES('100','John','VV Puram,Bangalore','M',660000);
+INSERT INTO EMPLOYEE(SSN, Name, Address, Sex, Salary)VALUES('200','Scott','MG Road,Bangalore','M',700500);
+INSERT INTO EMPLOYEE(SSN, Name, Address, Sex, Salary)VALUES('300','Smith','Jayanagar,Bangalore','M',600000);
+INSERT INTO EMPLOYEE(SSN, Name, Address, Sex, Salary)VALUES('400','Vani','Vijayanagar,Bangalore','F',800000);
+INSERT INTO EMPLOYEE(SSN, Name, Address, Sex, Salary)VALUES('500','Gopal','PB Nagar,Bangalore','M',500000);
+INSERT INTO EMPLOYEE(SSN, Name, Address, Sex, Salary) VALUES(600,'Ravi','Kormangala Bangalore','M',700000);
+INSERT INTO EMPLOYEE(SSN, Name, Address, Sex, Salary) VALUES(700,'Raghu','RR Nagar Bangalore','M',680000);
+INSERT INTO EMPLOYEE(SSN, Name, Address, Sex, Salary) VALUES(800,'Vinod','RT Nagar Bangalore','M',800000);
+INSERT INTO EMPLOYEE(SSN, Name, Address, Sex, Salary) VALUES(900,'Shankar','CH pete Bangalore','M',606000);
+INSERT INTO EMPLOYEE(SSN, Name, Address, Sex, Salary) VALUES(1000,'Sagar','VV Puram Bangalore','M',800000);
+
+INSERT INTO DEPARTMENT VALUES('D1','Accounts','200','11-Feb-2015');
+INSERT INTO DEPARTMENT VALUES('D2','Research','200','11-Mar-2016');
+INSERT INTO DEPARTMENT VALUES('D3','Finance','400','16-Jun-2015');
+INSERT INTO DEPARTMENT VALUES('D4','Admin','100','30-Apr-2017');
+INSERT INTO DEPARTMENT VALUES('D5','Testing','400','21-Mar-2016');
+
+INSERT INTO DLOCATION VALUES('D1','Bangalore');
+INSERT INTO DLOCATION VALUES('D2','Mysore');
+INSERT INTO DLOCATION VALUES('D1','Mysore');
+INSERT INTO DLOCATION VALUES('D3','Bangalore');
+INSERT INTO DLOCATION VALUES('D4','Mangalore');
+
+INSERT INTO  PROJECT VALUES('P1','Billing','Bangalore','D1');
+INSERT INTO  PROJECT VALUES('P8','IoT','Mysore','D2');
+INSERT INTO  PROJECT VALUES('P3','Network','Davangere','D2');
+INSERT INTO  PROJECT VALUES('P4','Tax','Kolar','D1');
+INSERT INTO  PROJECT VALUES('P5','Salary','Bangalore','D3');
+INSERT INTO  PROJECT VALUES('P6','Placement','Mysore','D4');
+INSERT INTO  PROJECT VALUES('P7','Software','Bangalore','D5');
+
+INSERT INTO WORKS_ON VALUES('100','P1',8);
+INSERT INTO WORKS_ON VALUES('200','P3',10);
+INSERT INTO WORKS_ON VALUES('300','P8',10);
+INSERT INTO WORKS_ON VALUES('100','P8',10);
+INSERT INTO WORKS_ON VALUES('400','P4',10);
+INSERT INTO WORKS_ON VALUES('400','P6',12);
+INSERT INTO WORKS_ON VALUES('500','P7',10);
+INSERT INTO WORKS_ON VALUES('600','P4',10);
+INSERT INTO WORKS_ON VALUES('700','P5',10);
+INSERT INTO WORKS_ON VALUES('800','P1',10);
+INSERT INTO WORKS_ON VALUES('900','P4',10);
+INSERT INTO WORKS_ON VALUES('1000','P5',10);
+
+UPDATE EMPLOYEE SET SuperSSN='200' where SSN='100';
+UPDATE EMPLOYEE SET SuperSSN='200' where SSN='300';
+UPDATE EMPLOYEE SET SuperSSN='200' where SSN='400';
+UPDATE EMPLOYEE SET SuperSSN='300' where SSN='200';
+UPDATE EMPLOYEE SET SuperSSN='300' where SSN='500';
+UPDATE EMPLOYEE SET SuperSSN='200' where SSN='600';
+UPDATE EMPLOYEE SET SuperSSN='200' where SSN='700';
+UPDATE EMPLOYEE SET SuperSSN='200' where SSN='800';
+UPDATE EMPLOYEE SET SuperSSN='200' where SSN='900';
+UPDATE EMPLOYEE SET SuperSSN='200' where SSN='1000';
+
+UPDATE EMPLOYEE SET DNo='D1' where SSN='100';
+UPDATE EMPLOYEE SET DNo='D2' where SSN='200';
+UPDATE EMPLOYEE SET DNo='D3' where SSN='300';
+UPDATE EMPLOYEE SET DNo='D4' where SSN='400';
+UPDATE EMPLOYEE SET DNo='D2' where SSN='500';
+UPDATE EMPLOYEE SET DNo='D1' where SSN='600';
+UPDATE EMPLOYEE SET DNo='D1' where SSN='700';
+UPDATE EMPLOYEE SET DNo='D1' where SSN='800';
+UPDATE EMPLOYEE SET DNo='D1' where SSN='900';
+UPDATE EMPLOYEE SET DNo='D1' where SSN='1000';
+
+SELECT * FROM EMPLOYEE;
+SSN	 NAME	    ADDRESS	 SE	  SALARY SUPERSSN DNO
+---- 	------- 	---------------          -------- ------- 	-------  ---
+100	 John	    VV Puram,Bangalore	   M	  660000		200	  D1
+200	 Scott   	 MG Road,Bangalore	   M	  700500		300	  D2
+300	 Smith    Jayanagar,Bangalore 	   M	  600000 	200	  D3
+400	 Vani	    Vijayanagar,Bangalore	   F	  800000 	200	  D4
+500	 Gopal    PB Nagar,Bangalore	   M	  500000 	300	  D2
+600	 Ravi	    Kormangala Bangalore	   M	  700000 	200	  D1
+700	 Raghu    RR Nagar Bangalore	   M	  680000 	200	  D1
+800	 Vinod    RT Nagar Bangalore	   M	  800000 	200	  D1
+900	 Shankar  CH pete Bangalore	   M	  606000 	200	  D1
+1000	 Sagar    VV Puram Bangalore	   M	  800000 	200	  D1
+
+SELECT * FROM DEPARTMENT;
+DNO    DNAME	  MGRSSN   MGRSTARTD
+------ ----------		 -------- 		---------
+D1     Accounts   	200		11-FEB-15
+D2     Research   	200		11-MAR-16
+D3     Finance		400		16-JUN-15
+D4     Admin		100		30-APR-17
+D5     Testing		400		21-MAR-16
+
+SELECT * FROM DLOCATION;
+DNO    DLOC
+------ ---------------
+D1     Bangalore
+D1     Mysore
+D2     Mysore
+D3     Bangalore
+D4     Mangalore
+
+SELECT * FROM PROJECT;
+PNO   PNAME		PLOCATION	DNO
+-----	 ---------- 	-------------- ------
+P1   	 Billing		 Bangalore	D1
+P8   	 IoT		 Mysore 		D2
+P3   	 Network	 Davangere	D2
+P4    	Tax		 Kolar		D1
+P5    	Salary		Bangalore	D3
+P6    	Placement   	Mysore 		D4
+P7    	Software	Bangalore	D5
+SELECT * FROM WORKS_ON;
+SSN	 PNO	    HOURS
+-------- ----- 	----------
+100	 P1	  8
+300	 P3	       10
+300	 P8	       10
+100	 P8	       10
+400	 P4	       10
+400	 P6	       12
+500	 P7	       10
+400	 P8	       10
+600	 P4	       10
+700	 P5	       10
+800	 P1	       10
+900	 P4	       10
+1000	 P5	       10
+Queries:
+1.Make a list of all project numbers for projects that involve an employee whose last name is ‘Scott’, either as a worker or as a manager of the department that controls the project.
+
+SELECT DISTINCT PNo
+      FROM PROJECT 
+     WHERE PNo IN(
+                     (SELECT P.PNo 
+                      FROM  PROJECT P,DEPARTMENT D ,EMPLOYEE E
+		WHERE P.DNo=D.DNo AND D.MgrSSN=E.SSN AND E.Name='Scott')
+		UNION
+	(SELECT W.PNo 
+                      FROM  WORKS_ON W, EMPLOYEE E
+		WHERE E.SSN=W.SSN AND E.Name='Scott'));
+OUTPUT:
+
+PNO
+-----
+P1
+P3
+P4
+P8
+
+2.Show the resulting salaries if every employee working on the ‘IoT’ project is given a 10
+percentraise.
+
+SELECT E.Name,1.1* E.Salary AS Increased_salary 
+FROM EMPLOYEE E, WORKS_ON W, PROJECT P 
+WHERE  E.SSN=W.SSN AND W.PNo=P.PNo AND P.PName='IoT';
+
+OUTPUT:
+NAME	     INCREASED_SALARY
+---------- 	----------------
+John		     726000
+Smith		     660000
+Vani		     880000
+
+
+3.Find the sum of the salaries of all employees of the ‘Accounts’ department,as well as the maximum salary, the minimum salary, and the average salary in this department.
+
+        SELECT SUM (E. Salary) AS TOTAL_SALARY,MAX(E. Salary) AS 
+        MAX_SALARY,MIN(E. Salary) AS MIN_SALARY,AVG(E. Salary) AS
+        AVG_SALARY 
+        FROM  EMPLOYEE E, DEPARTMENT D
+	  WHERE E. DNo= D. DNo AND D.DName='Accounts';
+
+
+OUTPUT:
+TOTAL_SALARY	 MAX_SALARY	 MIN_SALARY 	AVG_SALARY
+------------		 ---------- 	---------- 	----------
+     4246000		800000     		606000		 707666.667
+
+
+
+
+4.Retrieve the name of each employee who works on all the projects controlledby department
+ number 5 (use NOT EXISTS operator).
+
+SELECT  E.Name 
+FROM EMPLOYEE E
+WHERE NOT EXISTS((SELECT PNo FROM PROJECT WHERE DNo='D5')
+MINUS  (SELECT W.PNo FROM  WORKS_ON W WHERE E.SSN=W.SSN));
+
+OUTPUT:
+NAME
+----------
+Gopal
+
+5.For each department that has more than five employees, retrieve the department number and
+thenumber of its employees who are making more than Rs. 6,00,000.
+
+SELECT  D.DNo,COUNT(*)
+	FROM  EMPLOYEE E, DEPARTMENT D
+	WHERE E.DNo= D.DNo AND E.Salary>600000
+	GROUP BY D.DNo
+	HAVING COUNT(*)>=5;
+OUTPUT:
+
+DNO	 COUNT(*)
+----------------
+D1		6
+
