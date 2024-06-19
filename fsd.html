@@ -1,0 +1,185 @@
+--1.2 Develop a Django app that displays current date and time in server
+views.py
+from django.shortcuts import render
+import datetime
+from django.http import HttpResponse
+# Create your views here.
+def cdt(request):
+dt=datetime.datetime.now()
+resp="<h1>Current Date and Time is %s<h1>"%(dt)
+return HttpResponse(resp)
+urls.py
+from django.contrib import admin
+from django.urls import path
+from scdtApp.views import cdt
+urlpatterns = [
+path('admin/', admin.site.urls),
+path('currentDT/',cdt),
+]
+
+
+1.3Displays dynamic date & time. (All Conditions)
+views.py
+import datetime
+from django.http import HttpResponse
+from django.shortcuts import render
+# Create your views here.
+def scdt(request,s):
+t=int(s)
+dt=datetime.datetime.now()+datetime.timedelta(hours=t)
+if t<0:
+resp="<h1>Current Date and Time Behind %d hrs is %s</h1>"%(t,dt)
+elif t>0:
+resp="<h1>Current Date and Time ahead by %d hrs is %s</h1>"%(t,dt)
+else:
+resp="<h1>There is no change in current date and time</h1>"
+return HttpResponse(resp)
+urls.py
+from django.contrib import admin
+from django.urls import path
+from scdt_dynamicApp.views import scdt
+urlpatterns = [
+path('admin/', admin.site.urls),
+path('dynamicTime/<str:s>/',scdt),
+]
+
+
+
+ 2.1 Develop a simple Django app that displays an unordered list of fruits and ordered list of
+selected students for an event.
+fruits_student.html
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#a1{background-color: lightblue;color:brown}
+#a2{background-color:blue;color:yellow}
+</style>
+<title>
+Unordered Fruits and Ordered Students
+</title>
+</head>
+<body>
+<h1 id="a1">Unordered List of Fruits</h1>
+<ul>
+{% for fruit in fruitList %}
+<li>{{fruit}}</li>
+{% endfor %}
+</ul>
+<h1 id="a2">Ordered List of Students Selected for an Event</h1>
+<ol>
+{% for student in studentList %}
+<li>{{student}}</li>
+{% endfor %}
+</ol>
+</body>
+</html>
+views.py
+from django.shortcuts import render
+  # Create your views here.
+def fruit_student(request):
+fruitList=['Mango','Kiwi','Banana','Apple','Grapes']
+studentList=['Rama','Chetan','Kumar','Harish','Geetha']
+return
+render(request,'fruit_student.html',{'fruitList':fruitList,'studentList':sorted(studentList)})
+urls.py
+from django.contrib import admin
+from django.urls import path
+from FruitsApp.views import fruit_student
+urlpatterns = [
+path('admin/', admin.site.urls),
+path('fruits/',fruit_student),
+]
+
+  settings.py (only one change inside installed apps add fruitsapp)
+  INSTALLED_APPS = [
+'django.contrib.admin',
+'django.contrib.auth',
+'django.contrib.contenttypes',
+'django.contrib.sessions',
+'django.contrib.messages',
+'django.contrib.staticfiles',
+'fruitsapp',
+]
+ 
+  
+3.2layout.html
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+nav{background-color: lightblue;padding: 15px;}
+</style>
+<title>
+{% block title %} {% endblock %}
+</title>
+</head>
+<body>
+<nav>
+<a href="/home/">HOME</a>
+<a href="/contactus/">CONTACT US</a>
+<a href="/aboutus/">ABOUT US</a>
+</nav>
+<section>
+{% block content %} {% endblock %}
+</section>
+<footer>
+<hr>
+&copy; Designed and Developed by Dr. Harish Kumar B T, CSE, BIT, Bangalore-04
+</footer>
+</body>
+</html>
+home.html
+{% extends 'layout.html' %}
+{% block title %} HOME Page {% endblock %}
+{% block content %}
+<h1>This is my home page</h1>
+{% endblock %}
+about.html
+{% extends 'layout.html' %}
+{% block title %} ABOUT PAGE {% endblock %}
+{% block content %}
+<h1>About Us</h1>
+<p>Dr. Harish Kumar B T, Asso. Prof, Dept of CSE, BIT</p>
+{% endblock %}
+contactus.html
+{% extends 'layout.html' %}
+{% block title %} Contact us {% endblock %}
+{% block content %}
+<h1>Contact us</h1>
+<p>Name: Dr. Harish Kumar B T</p>
+<p>Designation:Asso. Prof </p>
+<p>Mobile: 9980119894</p>
+<p>Email: harish.bitcse82@gmail.com</p>
+{% endblock %}
+views.py
+from django.shortcuts import render
+# Create your views here.
+def home(request):
+return render(request,'home.html')
+  def contactus(request):
+return render(request,'contactus.html')
+def aboutus(request):
+return render(request,'about.html')
+urls.py
+from django.contrib import admin
+from django.urls import path
+from layoutApp.views import aboutus, contactus, home
+urlpatterns = [
+path('admin/', admin.site.urls),
+path('',home),
+path('contactus/',contactus),
+path('aboutus/',aboutus),
+path('home/',home),
+]
+settings.py (only one change inside installed apps add layoutapp)
+# Application definition
+INSTALLED_APPS = [
+'django.contrib.admin',
+'django.contrib.auth',
+'django.contrib.contenttypes',
+'django.contrib.sessions',
+'django.contrib.messages',
+'django.contrib.staticfiles',
+'layoutApp',
+]
