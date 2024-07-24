@@ -1,0 +1,503 @@
+views.py
+from django.shortcuts import render
+from django.http import HttpResponse
+from lab6app.models import student, course, projectForm
+# Create your views here.
+def home(request):
+ return render(request, 'home.html')
+def studentlist(request):
+ s = student.objects.all()
+ return render(request, 'studentlist.html', {'student_list': s})
+def courselist(request):
+ c = course.objects.all()
+ return render(request, 'courselist.html', {'course_list': c})
+def register(request):
+ if request.method == "POST":
+ sid = request.POST.get("student")
+ cid = request.POST.get("course")
+ studentobj = student.objects.get(id=sid)
+ courseobj = course.objects.get(id=cid)
+ res = studentobj.courses.filter(id=cid)
+ if res:
+ resp = "<h1>Student with usn %s has already enrolled for the %s</h1>" % (studentobj.usn, 
+courseobj.courseCode)
+ return HttpResponse(resp)
+ studentobj.courses.add(courseobj)
+ resp = "<h1>Student with usn %s successfully enrolled for the course with sub code %s</h1>" % 
+(studentobj.usn, courseobj.courseCode)
+ return HttpResponse(resp)
+ else:
+ studentlist = student.objects.all()
+ courselist = course.objects.all()
+ return render(request, 'register.html', {'student_list': studentlist, 'course_list': courselist})
+def enrolledStudents(request):
+ if request.method == "POST":
+ cid = request.POST.get("course")
+ courseobj = course.objects.get(id=cid)
+ studentlistobj = courseobj.student_set.all()
+ return render(request, 'enrolledlist.html', {'course': courseobj, 'student_list': studentlistobj})
+ else:
+ courselist = course.objects.all()
+ return render(request, 'enrolledlist.html', {'Course_List': courselist})
+def add_project(request):
+ if request.method == "POST":
+ form = projectForm(request.POST)
+ if form.is_valid():
+ form.save()
+ return HttpResponse("<h1>Project Data Successfully saved</h1>")
+ else:
+ return HttpResponse("<h1>Project details not saved</h1>")
+ else:
+ form = projectForm()
+ return render(request, "projectReg.html", {'form': form})
+from django.views import generic
+class StudentListView(generic.ListView):
+ model = student
+ template_name = "GenericListViewStudent.html"
+class StudentDetailView(generic.DetailView):
+ model = student
+ template_name = "GenericDetailedViewStudent.html"
+import csv
+def generateCSV(request):
+ courses = course.objects.all()
+ resp = HttpResponse(content_type="text/csv")
+ resp['Content-Disposition'] = 'attachment; filename=course_data.csv'
+ writer = csv.writer(resp)
+ writer.writerow(['Course Code', 'Course Name', 'Course Credits'])
+ for c in courses:
+ writer.writerow([c.courseCode, c.courseName, c.courseCredits])
+ return resp
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table
+def generatePDF(request):
+ courses = course.objects.all()
+ resp = HttpResponse(content_type="application/pdf")
+ resp['Content-Disposition'] = 'attachment; filename=course_data.pdf'
+ pdf = SimpleDocTemplate(resp, pagesize=letter)
+ table_data = [['Course Code', 'Course Name', 'Course Credits']]
+ for c in courses:
+ table_data.append([c.courseCode, c.courseName, str(c.courseCredits)])
+ table = Table(table_data)
+ pdf.build([table])
+ return resp
+def registerajax(request):
+ if request.method == "POST":
+ sid = request.POST.get('usnid')
+ cid = request.POST.get('ccodeid')
+ studentobj = student.objects.get(id=sid)
+ courseobj = course.objects.get(id=cid)
+ res = studentobj.courses.filter(id=cid)
+ if res:
+ resp = "<h1>Already Registered for this course</h1>"
+ return HttpResponse(resp)
+ studentobj.courses.add(courseobj)
+ resp = "<h1>Successfully Registered</h1>"
+ return HttpResponse(resp)
+ else:
+ studentobjs = student.objects.all()
+ courseobjs = course.objects.all()
+ return render(request, 'registerAJAX.html', {'studentList': studentobjs, 'courseList': courseobjs})
+def enrolledlistajax(request):
+ if request.method == "POST":
+ cid = request.POST.get('ccodeid')
+ courseobj = course.objects.get(id=cid)
+ studentlistobj = courseobj.student_set.all()
+ return render(request, 'enrolledlistAJAX.html', {'studentList': studentlistobj})
+ else:
+ courselist = course.objects.all()
+ return render(request, 'enrolledlistAJAX.html', {'courseList': courselist})
+urls.py
+from django.contrib import admin
+from django.urls import path
+from lab6app.views import (
+ generateCSV, home, registerajax, studentlist, courselist, 
+ register, enrolledStudents, add_project, StudentListView, 
+ StudentDetailView, generatePDF, enrolledlistajax
+)
+urlpatterns = [
+ path('admin/', admin.site.urls),
+ path('', home, name='home'), # Root URL redirects to home
+ path('home/', home, name='home'),
+ path('studentlist/', studentlist, name='student_list'),
+ path('courselist/', courselist, name='course_list'),
+ path('register/', register, name='register'),
+ path('enrolledlist/', enrolledStudents, name='enrolled_students'),
+ path('addproject/', add_project, name='add_project'),
+ path('genericlistviewstudent/', StudentListView.as_view(), name='student_list_view'),
+ path('genericdetailedviewstudent/<int:pk>/', StudentDetailView.as_view(), 
+name='student_detail_view'),
+ path('download_course_table_as_csv/', generateCSV, name='download_course_csv'),
+ path('download_course_table_as_pdf/', generatePDF, name='download_course_pdf'),
+ path('courseRegUsingAjax/', registerajax, name='register_ajax'),
+ path('course_search_ajax/', enrolledlistajax, name='enrolled_list_ajax'),
+]
+models.py
+from django.db import models
+from django.forms import ModelForm
+# Create your models here.
+class Course(models.Model):
+ courseCode = models.CharField(max_length=10)
+ courseName = models.CharField(max_length=50)
+ courseCredits = models.IntegerField()
+ def __str__(self):
+ return f"{self.courseCode} {self.courseName} {self.courseCredits}"
+class Student(models.Model):
+ usn = models.CharField(max_length=10)
+ name = models.CharField(max_length=40)
+ sem = models.IntegerField()
+ courses = models.ManyToManyField(Course, related_name='student_set')
+ def __str__(self):
+ return f"{self.usn} {self.name} {self.sem}"
+class ProjectReg(models.Model):
+ student = models.ForeignKey(Student, on_delete=models.CASCADE)
+ ptitle = models.CharField(max_length=30)
+ planguage = models.CharField(max_length=30)
+ pduration = models.IntegerField()
+class ProjectForm(ModelForm):
+ required_css_class = "required"
+ class Meta:
+ model = ProjectReg
+ fields = ['student', 'ptitle', 'planguage', 'pduration']
+home.html
+{% extends 'basicTemplate.html' %}
+{% block title %} Home Page {% endblock %}
+{% block content %}
+ <ul>
+ <li>Click on <a href="/studentlist/">Student List</a> to get the list of students.</li>
+ <li>Click on <a href="/courselist/">Course List</a> to get the list of courses.</li>
+ <li>Click on <a href="/register/">Register</a> to enroll a student in a course.</li>
+ </ul>
+{% endblock %}
+projectReg.html
+{% extends 'basicTemplate.html' %}
+{% block title %} Project Details Registration {% endblock %}
+{% block content %}
+ <h1>Project Details Registration</h1>
+ <form method="POST" action="">
+ {% csrf_token %}
+ <table border="1">
+ {{ form.as_table }}
+ <tr>
+ <td>
+ <input type="submit" value="Add Project"/>
+ </td>
+ </tr>
+ </table>
+ </form>
+{% endblock %}
+register.html
+{% extends 'basicTemplate.html' %}
+{% block title %} Course Register Page {% endblock %}
+{% block content %}
+ <h1>Student Course Registration</h1>
+ <form method="POST" action="">
+ {% csrf_token %}
+ <label for="student">Select USN:</label>
+ <select name="student" id="student">
+ {% for s in student_list %}
+ <option value="{{ s.id }}">{{ s.usn }}</option>
+ {% endfor %}
+ </select>
+ <br><br>
+ <label for="course">Select Course:</label>
+ <select name="course" id="course">
+ {% for c in course_list %}
+ <option value="{{ c.id }}">{{ c.courseCode }}</option>
+ {% endfor %}
+ </select>
+ <br><br>
+ <input type="submit" value="ENROLL"/>
+ </form>
+{% endblock %}
+studentlist.html
+{% extends 'basicTemplate.html' %}
+{% block title %} Student List {% endblock %}
+{% block content %}
+ <h1>Student List</h1>
+ <table border="1">
+ <tr>
+ <th>USN</th>
+ <th>NAME</th>
+ <th>SEM</th>
+ </tr>
+ {% for s in student_list %}
+ <tr>
+ <td>{{ s.usn }}</td>
+ <td>{{ s.name }}</td>
+ <td>{{ s.sem }}</td>
+ </tr>
+ {% endfor %}
+ </table>
+{% endblock %}
+basicTemplate.html
+<!DOCTYPE html>
+<html>
+<head>
+ <style>
+ nav {
+ background-color: lightblue;
+ padding: 15px;
+ }
+ nav a {
+ color: #fff; /* Text color */
+ text-decoration: none; /* Remove underline */
+ padding: 10px 20px; /* Padding around each link */
+ margin: 0px 10px; /* Spacing between links */
+ border-radius: 5px; /* Rounded corners */
+ background-color: #555;
+ flex-wrap: wrap;
+ }
+ nav a:hover {
+ background-color: aqua; /* Background color on hover */
+ }
+ ul {
+ list-style: none;
+ margin: 0;
+ padding: 0;
+ display: flex; /* Use flexbox */
+ flex-wrap: wrap; /* Allow items to wrap to the next line */
+ flex-direction: row; /* Display items in a column */
+ }
+ li {
+ margin-right: 20px;
+ margin-bottom: 25px;
+ }
+ </style>
+ <title>{% block title %} {% endblock %}</title>
+</head>
+<body>
+ <center>
+ <h1 style="background-color: blue; color: yellow">
+ STUDENT COURSE REGISTRATION PORTAL
+ </h1>
+ </center>
+ <nav>
+ <ul>
+ <li><a href="/home/">HOME</a></li>
+ <li><a href="/studentlist/">STUDENT LIST</a></li>
+ <li><a href="/courselist/">COURSE LIST</a></li>
+ <li><a href="/register/">REGISTER</a></li>
+ <li><a href="/enrolledlist/">ENROLLED LIST</a></li>
+ <li><a href="/addproject/">ADD PROJECT</a></li>
+ <li><a href="/genericlistviewstudent/">GENERIC STUDENT LIST VIEW</a></li>
+ <li><a href="/genericdetailedviewstudent/<int:pk>/">GENERIC DETAILED STUDENT LIST 
+VIEW</a></li>
+ <li><a href="/download_course_table_as_csv/">DOWNLOAD COURSE AS CSV</a></li>
+ <li><a href="/download_course_table_as_pdf/">DOWNLOAD COURSE AS PDF</a></li>
+ </ul>
+ </nav>
+ <section>
+ {% block content %} {% endblock %}
+ </section>
+ <footer>
+ <hr />
+ <center>
+ &copy; Designed and Developed by Dr. Harish Kumar B T, Dept. of CSE, BIT, Bangalore-04
+ </center>
+ </footer>
+</body>
+</html>
+registerAJAX.html
+{% extends 'basicTemplate.html' %}
+{% block title %}Course Registration Using AJAX Call{% endblock %}
+{% block content %}
+ <h1>Course Registration using AJAX Call</h1>
+ <form action="" method="POST">
+ {% csrf_token %}
+ Select USN: 
+ <select name="student" id="susn">
+ {% for s in studentList %}
+ <option value="{{ s.id }}">{{ s.usn }}</option>
+ {% endfor %}
+ </select>
+ Select Course Code: 
+ <select name="course" id="ccode">
+ {% for c in courseList %}
+ <option value="{{ c.id }}">{{ c.courseCode }}</option>
+ {% endfor %}
+ </select>
+ <input type="button" value="ENROLL" id="btn"/>
+ <span id="resp"></span>
+ </form>
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+ <script>
+ $(document).ready(function(){
+ $("#btn").click(function(){
+ var usnid = $("#susn").val();
+ var ccodeid = $("#ccode").val();
+ $.ajax({
+ type: "POST",
+ url: "/registerajax/",
+ data: {
+ "usnid": usnid,
+ "ccodeid": ccodeid,
+ csrfmiddlewaretoken: "{{ csrf_token }}"
+ },
+ success: function(response){
+ $("#resp").html(response);
+ }
+ });
+ });
+ });
+ </script>
+{% endblock %}
+enrolledAJAX.html
+<h1>Enrolled List using AJAX Call</h1>
+<form action="" method="POST">
+ {% csrf_token %}
+ Select Course Code: 
+ <select name="course" id="ccode">
+ {% for c in courseList %}
+ <option value="{{ c.id }}">{{ c.courseCode }}</option>
+ {% endfor %}
+ </select>
+ <input type="button" value="SEARCH" id="btn"/>
+ <span id="resp"></span>
+ {% if studentList %}
+ <table border="1">
+ <tr>
+ <th>SLNO</th>
+ <th>USN</th>
+ <th>NAME</th>
+ <th>SEM</th>
+ </tr>
+ {% for s in studentList %}
+ <tr>
+ <td>{{ forloop.counter }}</td>
+ <td>{{ s.usn }}</td>
+ <td>{{ s.name }}</td>
+ <td>{{ s.sem }}</td>
+ </tr>
+ {% endfor %}
+ </table>
+ {% endif %}
+</form>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+ $(document).ready(function(){
+ $("#btn").click(function(){
+ var ccodeid = $("#ccode").val();
+ $.ajax({
+ type: "POST",
+ url: "/enrolledlistajax/",
+ data: {
+ "ccodeid": ccodeid,
+ csrfmiddlewaretoken: "{{ csrf_token }}"
+ },
+ success: function(response){
+ $("#resp").html(response);
+ }
+ });
+ });
+ });
+</script>
+ 
+courselist.html
+{% extends 'basicTemplate.html' %}
+{% block title %} Course List {% endblock %}
+{% block content %}
+ <h1>Course List</h1>
+ <table border="1">
+ <tr>
+ <th>Sub Code</th>
+ <th>Sub Name</th>
+ <th>Credits</th>
+ </tr>
+ {% for c in course_list %}
+ <tr>
+ <td>{{ c.courseCode }}</td>
+ <td>{{ c.courseName }}</td>
+ <td>{{ c.courseCredits }}</td>
+ </tr>
+ {% endfor %}
+ </table>
+{% endblock %}
+enrolledlist.html
+{% extends 'basicTemplate.html' %}
+{% block title %} Course Registration Details {% endblock %}
+{% block content %}
+ <form method="POST" action="">
+ {% csrf_token %}
+ <label for="course">Select Course:</label>
+ <select name="course" id="course">
+ {% for c in Course_List %}
+ <option value="{{ c.id }}">{{ c.courseCode }}</option>
+ {% endfor %}
+ </select>
+ <input type="submit" value="Search" />
+ 
+ {% if student_list %}
+ <h1>List of Students Registered for the Course {{ course.courseCode }}</h1>
+ <table border="1">
+ <tr>
+ <th>USN</th>
+ <th>NAME</th>
+ <th>SEM</th>
+ </tr>
+ {% for s in student_list %}
+ <tr>
+ <td>{{ s.usn }}</td>
+ <td>{{ s.name }}</td>
+ <td>{{ s.sem }}</td>
+ </tr>
+ {% endfor %}
+ </table>
+ {% endif %}
+ </form>
+{% endblock %}
+GenericDetailedViewStudent.html
+{% extends 'basicTemplate.html' %}
+{% block title %} Detailed Student View {% endblock %}
+{% block content %}
+ <h1>Student Name: {{ student.name }}</h1>
+ <h1>Student USN: {{ student.usn }}</h1>
+ <h1>Student Sem: {{ student.sem }}</h1>
+{% endblock %}
+GenericListViewStudent.html
+{% extends 'basicTemplate.html' %}
+{% block title %} Generic Student List View {% endblock %}
+{% block content %}
+ {% if student_list %}
+ <table border="1">
+ <tr>
+ <th>USN</th>
+ <th>Courses Enrolled</th>
+ </tr>
+ {% for student in student_list %}
+ <tr>
+ <td>
+ <a href="/genericdetailedviewstudent/{{ student.pk }}">{{ student.usn }}</a>
+ </td>
+ <td>
+ {% for course in student.courses.all %}
+ <span>{{ course.courseName }}</span>
+ {% if not forloop.last %}, {% endif %}
+ {% endfor %}
+ </td>
+ </tr>
+ {% endfor %}
+ </table>
+ {% else %}
+ <h1>No Students Enrolled</h1>
+ {% endif %}
+{% endblock %}
+DUMMY DATA INSERTION
+python manage.py shell
+from lab6app.models import student, course
+# Create courses
+course1 = course.objects.create(courseCode='CS101', courseName='Introduction to Computer Science', 
+courseCredits=4)
+course2 = course.objects.create(courseCode='CS102', courseName='Data Structures', courseCredits=3)
+course3 = course.objects.create(courseCode='CS103', courseName='Algorithms', courseCredits=3)
+# Create students
+student1 = student.objects.create(usn='USN001', name='Alice Smith', sem=2)
+student2 = student.objects.create(usn='USN002', name='Bob Brown', sem=4)
+student3 = student.objects.create(usn='USN003', name='Charlie Johnson', sem=6)
+student4 = student.objects.create(usn='USN004', name='Diana Lee', sem=2)
+student5 = student.objects.create(usn='USN005', name='Evan Davis', sem=4)
+# Enroll students in courses
+student1.courses.add(course1, course2)
+student2.courses.add(course2, course3)
+student3.courses.add(course1, course3)
+student4.courses.add(course2)
+student5.courses.add(course1)
